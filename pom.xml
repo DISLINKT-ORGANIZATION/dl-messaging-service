@@ -62,6 +62,7 @@
 	</dependencyManagement>
 
 	<build>
+		<finalName>messaging-service</finalName>
 		<plugins>
 			<plugin>
 				<groupId>org.springframework.boot</groupId>
