@@ -1,72 +1,55 @@
 package dislinkt.messagingservice.controller;
 
-import dislinkt.messagingservice.entities.ChatMessage;
-import dislinkt.messagingservice.entities.ChatNotification;
+import com.corundumstudio.socketio.SocketIONamespace;
+import com.corundumstudio.socketio.SocketIOServer;
+import com.corundumstudio.socketio.listener.ConnectListener;
+import com.corundumstudio.socketio.listener.DataListener;
+import com.corundumstudio.socketio.listener.DisconnectListener;
+import dislinkt.messagingservice.dto.ChatMessageDto;
 import dislinkt.messagingservice.service.ChatMessageService;
-import dislinkt.messagingservice.service.ChatRoomService;
+import dislinkt.messagingservice.service.SocketService;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.ResponseEntity;
-import org.springframework.messaging.handler.annotation.MessageMapping;
-import org.springframework.messaging.handler.annotation.Payload;
-import org.springframework.messaging.simp.SimpMessagingTemplate;
-import org.springframework.stereotype.Controller;
-import org.springframework.web.bind.annotation.CrossOrigin;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.stereotype.Component;
 
-@Controller
+
+@Component
 public class ChatController {
 
-    @Autowired
-    private SimpMessagingTemplate messagingTemplate;
+    private static final Logger log = LoggerFactory.getLogger(ChatController.class);
+
+    private final SocketIONamespace namespace;
+    private final SocketService socketService;
 
     @Autowired
-    private ChatMessageService chatMessageService;
-
-    @Autowired
-    private ChatRoomService chatRoomService;
-
-    @CrossOrigin(origins = "http://localhost:3000")
-    @MessageMapping("/chat")
-    public void processMessage(@Payload ChatMessage chatMessage) {
-        var chatId = chatRoomService
-                .getChatId(chatMessage.getSenderId(), chatMessage.getRecipientId(), true);
-        chatMessage.setChatId(chatId.get());
-
-        ChatMessage saved = chatMessageService.save(chatMessage);
-        messagingTemplate.convertAndSendToUser(
-                chatMessage.getRecipientId() + "","/queue/messages",
-                new ChatNotification(
-                        saved.getId(),
-                        saved.getSenderId(),
-                        saved.getSenderName()));
+    public ChatController(SocketIOServer server, SocketService socketService) {
+        this.namespace = server.addNamespace("/chat");
+        this.socketService = socketService;
+        this.namespace.addConnectListener(onConnected());
+        this.namespace.addDisconnectListener(onDisconnected());
+        this.namespace.addEventListener("chat", ChatMessageDto.class, onChatReceived());
     }
 
-    @CrossOrigin(origins = "http://localhost:3000")
-    @GetMapping("/messages/{senderId}/{recipientId}/count")
-    public ResponseEntity<Long> countNewMessages(
-            @PathVariable long senderId,
-            @PathVariable long recipientId) {
-
-        return ResponseEntity
-                .ok(chatMessageService.countNewMessages(senderId, recipientId));
+    private DataListener<ChatMessageDto> onChatReceived() {
+        return (senderClient, chatMessageDto, ackSender) -> {
+            log.info(chatMessageDto.toString());
+            socketService.sendMessage(chatMessageDto.getRecipientId() + "", senderClient, chatMessageDto);
+        };
     }
 
-
-    @CrossOrigin(origins = "http://localhost:3000")
-    @GetMapping("/messages/{senderId}/{recipientId}")
-    public ResponseEntity<?> findChatMessages ( @PathVariable long senderId,
-                                                @PathVariable long recipientId) {
-        return ResponseEntity
-                .ok(chatMessageService.findChatMessages(senderId, recipientId));
+    private ConnectListener onConnected() {
+        return (client) -> {
+            String room = client.getHandshakeData().getSingleUrlParam("room");
+            client.joinRoom(room);
+            log.info("Socket ID[{}]  Connected to socket", client.getSessionId().toString());
+        };
     }
 
-
-    @CrossOrigin(origins = "http://localhost:3000")
-    @GetMapping("/messages/{id}")
-    public ResponseEntity<?> findMessage ( @PathVariable long id) {
-        return ResponseEntity
-                .ok(chatMessageService.findById(id));
+    private DisconnectListener onDisconnected() {
+        return client -> {
+            log.debug("Client[{}] - Disconnected from chat module.", client.getSessionId().toString());
+        };
     }
 
 }

@@ -21,6 +21,11 @@ public class ChatNotification {
     @Column(name = "sender_id")
     private long senderId;
 
-    @Column(name = "sender_name")
-    private String senderName;
+    @Column(name = "recipient_id")
+    private long recipientId;
+
+    @Column(name = "timestamp")
+    private long timestamp;
+
+
 }

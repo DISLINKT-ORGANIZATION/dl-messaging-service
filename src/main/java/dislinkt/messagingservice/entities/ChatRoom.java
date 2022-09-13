@@ -6,6 +6,8 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import javax.persistence.*;
+import java.util.ArrayList;
+import java.util.List;
 
 @Data
 @NoArgsConstructor
@@ -20,13 +22,13 @@ public class ChatRoom {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private long id;
 
-    @Column(name = "chat_id")
-    private String chatId;
+    @Column(name = "user_1_id")
+    private long user1Id;
 
-    @Column(name = "sender_id")
-    private long senderId;
+    @Column(name = "user_2_id")
+    private long user2Id;
 
-    @Column(name = "recipient_id")
-    private long recipientId;
+    @OneToMany(fetch = FetchType.EAGER)
+    private List<ChatMessage> messages = new ArrayList<>();
 
 }
