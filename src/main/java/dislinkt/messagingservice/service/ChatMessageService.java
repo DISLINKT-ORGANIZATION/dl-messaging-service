@@ -1,14 +1,13 @@
 package dislinkt.messagingservice.service;
 
+import dislinkt.messagingservice.dto.ChatMessageDto;
 import dislinkt.messagingservice.entities.ChatMessage;
-import dislinkt.messagingservice.entities.MessageStatus;
-import dislinkt.messagingservice.exception.ResourceNotFoundException;
+import dislinkt.messagingservice.entities.ChatRoom;
 import dislinkt.messagingservice.repository.ChatMessageRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
-import java.util.ArrayList;
-import java.util.List;
+import java.util.Date;
 
 @Service
 public class ChatMessageService {
@@ -20,48 +19,25 @@ public class ChatMessageService {
     private ChatRoomService chatRoomService;
 
     public ChatMessage save(ChatMessage chatMessage) {
-        chatMessage.setMessageStatus(MessageStatus.RECEIVED);
-        repository.save(chatMessage);
-        return chatMessage;
+        return repository.save(chatMessage);
     }
 
-    public long countNewMessages(long senderId, long recipientId) {
-        return repository.countBySenderIdAndRecipientIdAndMessageStatus(senderId, recipientId, MessageStatus.RECEIVED);
+    public ChatMessageDto processMessage(ChatMessageDto chatMessageDto) {
+        System.out.println("JA SAM OVDE DOSAO");
+        ChatRoom room = chatRoomService.getChatRoom(chatMessageDto.getSenderId(), chatMessageDto.getRecipientId());
+        ChatMessage chatMessage = new ChatMessage();
+        chatMessage.setChatRoom(room);
+        Date now = new Date();
+        chatMessage.setTimestamp(now.getTime());
+        chatMessage.setSenderId(chatMessageDto.getSenderId());
+        chatMessage.setRecipientId(chatMessageDto.getRecipientId());
+        chatMessage.setContent(chatMessageDto.getContent());
+        chatMessage = save(chatMessage);
+        room.getMessages().add(chatMessage);
+        chatRoomService.saveChatRoom(room);
+        chatMessageDto.setChatRoomId(chatMessage.getChatRoom().getId());
+        chatMessageDto.setId(chatMessage.getId());
+        chatMessageDto.setTimestamp(chatMessage.getTimestamp());
+        return chatMessageDto;
     }
-
-    public List<ChatMessage> findChatMessages(long senderId, long recipientId) {
-        var chatId = chatRoomService.getChatId(senderId, recipientId, false);
-
-        var messages =
-                chatId.map(cId -> repository.findByChatId(cId)).orElse(new ArrayList<>());
-
-        if(messages.size() > 0) {
-            updateStatuses(senderId, recipientId, MessageStatus.DELIVERED);
-        }
-
-        return messages;
-    }
-
-    public ChatMessage findById(long id) {
-        return repository
-                .findById(id)
-                .map(chatMessage -> {
-                    chatMessage.setMessageStatus(MessageStatus.DELIVERED);
-                    return repository.save(chatMessage);
-                })
-                .orElseThrow(() ->
-                        new ResourceNotFoundException("can't find message (" + id + ")"));
-    }
-
-    public void updateStatuses(long senderId, long recipientId, MessageStatus status) {
-        List<ChatMessage> messages = repository.findBySenderIdAndRecipientId(senderId, recipientId);
-        for (ChatMessage chatMessage: messages) {
-            chatMessage.setMessageStatus(status);
-            repository.save(chatMessage);
-        }
-    }
-
-
-
-
 }
