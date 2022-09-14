@@ -23,7 +23,6 @@ public class ChatMessageService {
     }
 
     public ChatMessageDto processMessage(ChatMessageDto chatMessageDto) {
-        System.out.println("JA SAM OVDE DOSAO");
         ChatRoom room = chatRoomService.getChatRoom(chatMessageDto.getSenderId(), chatMessageDto.getRecipientId());
         ChatMessage chatMessage = new ChatMessage();
         chatMessage.setChatRoom(room);

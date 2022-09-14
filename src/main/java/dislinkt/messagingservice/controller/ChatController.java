@@ -6,7 +6,6 @@ import com.corundumstudio.socketio.listener.ConnectListener;
 import com.corundumstudio.socketio.listener.DataListener;
 import com.corundumstudio.socketio.listener.DisconnectListener;
 import dislinkt.messagingservice.dto.ChatMessageDto;
-import dislinkt.messagingservice.service.ChatMessageService;
 import dislinkt.messagingservice.service.SocketService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -42,13 +41,13 @@ public class ChatController {
         return (client) -> {
             String room = client.getHandshakeData().getSingleUrlParam("room");
             client.joinRoom(room);
-            log.info("Socket ID[{}]  Connected to socket", client.getSessionId().toString());
         };
     }
 
     private DisconnectListener onDisconnected() {
-        return client -> {
-            log.debug("Client[{}] - Disconnected from chat module.", client.getSessionId().toString());
+        return (client) -> {
+            String room = client.getHandshakeData().getSingleUrlParam("room");
+            client.leaveRoom(room);
         };
     }
 
