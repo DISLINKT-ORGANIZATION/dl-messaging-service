@@ -1,6 +1,7 @@
 package dislinkt.messagingservice;
 
 import com.corundumstudio.socketio.Configuration;
+import com.corundumstudio.socketio.SocketIONamespace;
 import com.corundumstudio.socketio.SocketIOServer;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
