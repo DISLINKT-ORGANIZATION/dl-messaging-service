@@ -16,6 +16,7 @@ public class ChatMessageDto {
     private long chatRoomId;
     private String content;
     private long timestamp;
+    private boolean sendNotification;
 
     public ChatMessageDto(ChatMessage message) {
         this.id = message.getId();
