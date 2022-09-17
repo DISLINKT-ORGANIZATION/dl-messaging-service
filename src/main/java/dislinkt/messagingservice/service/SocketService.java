@@ -26,7 +26,7 @@ public class SocketService {
                 break;
             }
         }
-        if (notFound) {
+        if (notFound && messageDto.isSendNotification()) {
             chatNotificationService.publishNotification(messageDto);
         }
     }
