@@ -2,6 +2,7 @@ package dislinkt.messagingservice.configuration;
 
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
@@ -20,6 +21,9 @@ import dislinkt.messagingservice.security.auth.TokenAuthenticationFilter;
 @Configuration
 @EnableGlobalMethodSecurity(prePostEnabled = true)
 public class SecurityConfiguration extends WebSecurityConfigurerAdapter {
+	
+	@Value("${auth-service.address}")
+    private String authServiceAddress;
 
     @Autowired
     private EncoderConfig encoderConfig;
@@ -45,8 +49,8 @@ public class SecurityConfiguration extends WebSecurityConfigurerAdapter {
         http
                 .sessionManagement().sessionCreationPolicy(SessionCreationPolicy.STATELESS).and()
                 .exceptionHandling().authenticationEntryPoint(restAuthenticationEntryPoint).and()
-                .authorizeRequests().anyRequest().authenticated().and()
-                .addFilterBefore(new TokenAuthenticationFilter(tokenUtils), BasicAuthenticationFilter.class);
+                .authorizeRequests().antMatchers("/actuator/**").permitAll().anyRequest().authenticated().and()
+                .addFilterBefore(new TokenAuthenticationFilter(tokenUtils, authServiceAddress), BasicAuthenticationFilter.class);
 //			.cors().configurationSource(request -> config)
         http.csrf().disable();
     }
