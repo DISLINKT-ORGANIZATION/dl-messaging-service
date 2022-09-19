@@ -18,8 +18,7 @@ public class MessagingServiceApplication {
     @Bean
     public SocketIOServer socketIOServer() {
         Configuration config = new Configuration();
-//		config.setHostname("localhost");
-        config.setHostname("messaging-service");
+		config.setHostname("localhost");
         config.setPort(8186);
         return new SocketIOServer(config);
     }
